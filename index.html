@@ -80,7 +80,7 @@
     <div class="bg-gradient-to-r from-red-600 to-red-700 text-white text-center py-3 px-4 font-bold text-sm md:text-base sticky top-0 z-50 shadow-lg">
         <span class="inline-flex items-center gap-2 animate-pulse">
             <i data-lucide="alert-circle" class="w-4 h-4"></i>
-            URGENT: Only 6 Partner Spots Remaining For This Month's Batch.
+            URGENT: 20 Partner Spots Available For This Month's Batch.
         </span>
     </div>
 
@@ -190,10 +190,10 @@
                 <div class="mb-8">
                     <div class="flex justify-between text-sm font-semibold mb-2 text-blue-200">
                         <span>Current Batch Status</span>
-                        <span>14 / 20 Filled</span>
+                        <span id="status-text">0 / 20 Filled</span>
                     </div>
                     <div class="w-full bg-slate-700/50 rounded-full h-4 overflow-hidden backdrop-blur-sm border border-white/10">
-                        <div class="bg-gradient-to-r from-green-400 to-emerald-500 h-full rounded-full relative" style="width: 70%">
+                        <div id="status-bar" class="bg-gradient-to-r from-green-400 to-emerald-500 h-full rounded-full relative transition-all duration-1000" style="width: 0%">
                             <div class="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]"></div>
                         </div>
                     </div>
@@ -214,7 +214,7 @@
                         <div class="text-sm text-slate-300">Total Setup</div>
                     </div>
                     <div class="p-4 rounded-xl bg-red-500/20 border border-red-500/30">
-                        <div class="text-3xl font-bold text-red-400">6</div>
+                        <div id="spots-left-count" class="text-3xl font-bold text-red-400">20</div>
                         <div class="text-sm text-slate-300">Spots Left</div>
                     </div>
                 </div>
@@ -492,8 +492,9 @@
             <i data-lucide="user-check" class="w-5 h-5"></i>
         </div>
         <div>
-            <p class="text-xs font-bold text-slate-400">Recent Applicant</p>
-            <p class="text-sm font-bold text-slate-800" id="notification-text">Sarah from Texas just applied.</p>
+            <!-- UPDATED: Title ID for dynamic change -->
+            <p class="text-xs font-bold text-slate-400">Application Update</p>
+            <p class="text-sm font-bold text-slate-800" id="notification-text">Waiting for submission...</p>
         </div>
     </div>
 
@@ -549,6 +550,20 @@
             }
         }
 
+        // UPDATED: Notification function
+        const toast = document.getElementById('notification-toast');
+        const toastText = document.getElementById('notification-text');
+        const toastTitle = document.querySelector('#notification-toast p:first-child'); 
+
+        function showNotification(title, message) {
+            toastTitle.innerText = title;
+            toastText.innerText = message;
+            toast.style.transform = "translateY(0)";
+            setTimeout(() => {
+                toast.style.transform = "translateY(200px)";
+            }, 5000);
+        }
+
         // Partner Application Handling
         async function handleFormSubmit(e) {
             e.preventDefault();
@@ -558,7 +573,7 @@
             
             const amazonStatus = document.getElementById('amazon-status').value;
             const acxStatus = document.getElementById('acx-status').value;
-            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const nameInput = document.querySelector('input[name="app_name"]').value;
             
             // 1. Close the application modal first
             closeModal('applicationModal');
@@ -572,7 +587,7 @@
                     const formData = {
                         _subject: "New Qualified Partner Application",
                         _captcha: "false", // Disable captcha for smoother UX
-                        name: document.querySelector('input[name="app_name"]').value,
+                        name: nameInput,
                         email: document.querySelector('input[name="app_email"]').value,
                         phone: document.querySelector('input[name="app_phone"]').value,
                         amazon_status: amazonStatus,
@@ -582,8 +597,15 @@
                     // 2. WAIT for email to send
                     await sendEmail(formData);
 
-                    // 3. Show Success only after email sends
-                    openModal('successModal');
+                    // 3. Update Stats and Show Notification
+                    document.getElementById('status-text').innerText = "1 / 20 Filled";
+                    document.getElementById('status-bar').style.width = "5%";
+                    document.getElementById('spots-left-count').innerText = "19";
+                    
+                    showNotification("Application Received", `Thanks ${nameInput.split(' ')[0]}, we are reviewing it!`);
+
+                    // 4. Show Success Modal
+                    setTimeout(() => openModal('successModal'), 500);
                 } catch (error) {
                     alert("Error: Could not send application. Please try the 'Have Questions' form below to activate your email connection first.");
                 }
@@ -593,32 +615,8 @@
             }
         }
 
-        // Live Notification Logic
-        const notifications = [
-            "Michael B. from New York just applied.",
-            "Sarah K. verified her Amazon Account.",
-            "David L. from London secured a spot.",
-            "Jessica M. just started earning $250/mo.",
-            "Robert P. connected his ACX account."
-        ];
-
-        const toast = document.getElementById('notification-toast');
-        const toastText = document.getElementById('notification-text');
-
-        function showNotification() {
-            const msg = notifications[Math.floor(Math.random() * notifications.length)];
-            toastText.innerText = msg;
-            toast.style.transform = "translateY(0)";
-            setTimeout(() => {
-                toast.style.transform = "translateY(200px)";
-            }, 4000);
-        }
-
-        setTimeout(() => {
-            showNotification();
-            setInterval(showNotification, 10000);
-        }, 3000);
-
+        // Removed the fake notification loop
+        // The toast now only appears when showNotification() is called inside handleFormSubmit
     </script>
 </body>
 </html>
